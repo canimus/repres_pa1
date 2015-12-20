@@ -20,8 +20,8 @@ download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.z
 data <- read.csv(unz(temp, "activity.csv"))
 
 # 1.2 Parse data
-data <- tbl_df(data)
-data <- data %>% replace(is.na(.), 0)
+data_source <- tbl_df(data)
+data <- data_source %>% replace(is.na(.), 0)
 
 # Convert date column to date objects
 data$date <- ymd(data$date)
@@ -83,3 +83,50 @@ ggplot(data=interval_plot, aes(x=interval, y=avg_steps)) +
 max_steps <- max(interval_plot$avg_steps)
 interval_plot %>% filter(avg_steps >= max_steps) %>% select(interval)
 ```
+
+### Imputing missing values
+
+1. Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
+```{r}
+sum(is.na(data_source$steps))
+```
+
+2. Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
+
+```{r}
+avg_steps_agg <- aggregate(steps ~ interval, data = data_source, FUN = mean)
+fill_empty_values <- numeric()
+for (i in 1:nrow(data_source)) {
+    obs <- data_source[i, ]
+    if (is.na(obs$steps)) {
+        steps <- subset(avg_steps_agg, interval == obs$interval)$steps
+    } else {
+        steps <- obs$steps
+    }
+    fill_empty_values <- c(fill_empty_values, steps)
+}
+```
+
+3. Create a new dataset that is equal to the original dataset but with the missing data filled in.
+```{r}
+fill_data_source <- data_source
+fill_data_source$steps <- fill_empty_values
+```
+
+4. Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+
+```{r fig.width=12, fig.height=4}
+g <- ggplot(fill_data_source, aes(x=steps))
+g + geom_histogram(color="#333333", fill="#508cdd", bins = 30)
+```
+
+**The distribution appears to be concentrated in the first values**
+
+### Are there differences in activity patterns between weekdays and weekends?
+
+1. Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.
+
+```{r}
+
+```
+
